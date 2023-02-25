@@ -1,0 +1,382 @@
+﻿@{
+    ViewBag.Title = "Index";
+}
+<style>
+    #filterPanel td {
+        border: none;
+    }
+</style>
+<link rel="stylesheet" href="~/Content/batdongsan-alert.css" />
+<script src="~/Scripts/jquery.unobtrusive-ajax.min.js"></script>
+<script src="~/Scripts/moment.min.js"></script>
+<script src="~/Scripts/vi.js"></script>
+<script src="~/Scripts/bootstrap-datetimepicker.min.js"></script>
+<script src="~/Scripts/batdongsan.generals.js"></script>
+<script src="~/Scripts/autoNumeric.js"></script>
+<link rel="stylesheet" href="~/Content/bootstrap-datetimepicker.min.css" />
+<link rel="stylesheet" href="~/Content/bootstrap-switch/bootstrap3/bootstrap-switch.min.css" />
+<script src="~/Scripts/bootstrap-switch.min.js"></script>
+<script src="~/Scripts/select2.full.js"></script>
+<link href="~/Scripts/select2.min.css" rel="stylesheet">
+<style>
+    @@media (max-width: 750px) {
+    table.indexTblDanhMucLoaiThuoc td:nth-of-type(1):before {
+        content: "STT";
+    }
+
+    table.indexTblDanhMucLoaiThuoc td:nth-of-type(2):before {
+        content: "Mã loại thuốc";
+    }
+
+    table.indexTblDanhMucLoaiThuoc td:nth-of-type(3):before {
+        content: "Tên loại thuốc";
+    }
+
+    table.indexTblDanhMucLoaiThuoc td:nth-of-type(4):before {
+        content: "Người lập";
+    }
+      table.indexTblDanhMucLoaiThuoc td:nth-of-type(5):before {
+        content: "Ngày lập";
+    }
+    table.indexTblDanhMucLoaiThuoc td:nth-of-type(6):before {
+        content: "";
+    }
+    }
+    </style>
+<script>
+    $(function () {
+        $("#maThuoc").select2({
+            allowClear: true,
+            placeholder: "--Chọn loại thuốc--"
+        });
+        $(".datepicker").datetimepicker({
+            locale: 'vi',
+            format: 'DD/MM/YYYY'
+        });
+        $(document).on("click", "[name=maSoXe]", function () {
+            if (false == $(this).prop("checked")) { //if this item is unchecked
+                $("[name=check-all]").prop('checked', $(this).prop("checked")); //change "select all" checked status to false
+            }
+        });
+        $(document).on("click", "[name=check-all]", function () {
+            $('#content input:checkbox').not(this).prop('checked', this.checked);
+        });
+        $('#btnSearch').click(function () {
+            listFilter(this);
+        });
+        $(document).on("change", "#filterPanel select", function () {
+            listFilter(this);
+        });
+        $('#btnUpdate').click(function (id) {
+            var idArray = [];
+            $("#container [name=maSoXe]:checked").each(function () {
+                idArray.push(this.value);
+            });
+            var url = '@Url.Action("Edit", "DanhMucSanPham")';
+            if (idArray.length > 0) {
+                url = url + "/" + idArray[0];
+                window.location.href = url;
+            }
+            else {
+                bootbox.alert("Vui lòng chọn số phiếu để cập nhật.");
+            }
+        });
+     
+
+
+        $("#btnSaveImport").click(function () {
+            var value = $('#fileImport').val();
+            if (value == "") {
+                Alert.error("Không có file nhập dữ liệu", "Thông báo", { displayDuration: 0 });
+            }
+            else {
+                var fd = new FormData();
+                fd.append("fileToUpload", document.getElementById('fileImport').files[0]);
+                $.ajax({
+                    url: "/DanhMucSanPham/ImportExcelData",
+                    type: 'POST',
+                    dateType: 'json',
+                    data: fd,
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    beforeSend: function () {
+                        $('.progress').html('<img src="/Images/progress.gif" />');
+                    },
+                    success: function (data) {
+                        if (data == "") {
+                            Alert.success("Import thành công!", "Thông báo", { displayDuration: 0 });
+                            setTimeout(function () {
+                                location.reload();
+                            }, 1500);
+
+                        }
+                        else {
+                            Alert.error("Import file không thành công", "Thông báo", { displayDuration: 0 });
+                        }
+                    },
+                    error: function () {
+                        Alert.error("Import file không thành công", "Thông báo", { displayDuration: 0 });
+                    }
+                })
+            }
+        });
+  
+
+    });
+    function themMoi() {
+        location.href = '@Url.Action("Create", "DanhMucSanPham")';
+    }
+    function listFilter(obj) {
+        var url = "@Url.Action("Index", "DanhMucSanPham")" + "?pageSize=" + $("#pref-perpage").val()
+                                                            + "&qSearch=" + $("#pref-search").val().replace(/\ /g, "+")
+                                                            + "&tuNgay=" + $("#fromDate").val()
+                                                            + "&denNgay=" + $("#toDate").val() + "&maLoaiThuoc=" + $("#maThuoc").val();
+        beginPaging();
+        $('#content').html('<h4>Loading...</h4>').load(url, function () {
+            successPaging();
+        });
+    }
+    function beginPaging(args) {
+        // Animate        
+        $('#content').fadeOut('fast');
+    }
+
+    function successPaging() {
+        $('#content').fadeIn('fast');
+    }
+    function failurePaging() {
+        alert("Không thể tải dữ liệu");
+    }
+
+    function toDay() {
+        $("#fromDate").data("DateTimePicker").date(moment());
+        $("#toDate").data("DateTimePicker").date(moment());
+    }
+    function toWeek() {
+        $("#fromDate").data("DateTimePicker").date(moment().subtract(7, "day"));
+        $("#toDate").data("DateTimePicker").date(moment());
+    }
+    function toMonth() {
+        $("#fromDate").data("DateTimePicker").date(moment().subtract(1, "month"));
+        $("#toDate").data("DateTimePicker").date(moment());
+    }
+    function enterToSeacrh(event) {
+        if (event.keyCode == 13)
+            $("#btnSearch").click();
+    }
+    function ChangMaLoai(obj, maNguyenLieu) {
+        $.ajax({
+            url: "/NguyenLieu/UpdateMaLoai",
+            type: 'POST',
+            data: { maLoai: $(obj).val(), maNguyenLieu: maNguyenLieu },
+            success: function (data) {
+                if (data == "") {
+                    
+                } else {
+                    Alert.error("Đã có lỗi xảy ra, Vui lòng kiểm tra lại.", "Thông báo", { displayDuration: 2000 });
+                }
+            },
+            error: function () {
+                Alert.error("Cập nhật không thành công", "Thông báo", { displayDuration: 2000 });
+            }
+        });
+    }
+    function ChangeDinhMuc(obj, maNguyenLieu) {
+        $.ajax({
+            url: "/NguyenLieu/UpdateDinhMucHaoHut",
+            type: 'POST',
+            data: { dinhMuc: parseFloat($(obj).autoNumeric('get')), maNguyenLieu: maNguyenLieu },
+            success: function (data) {
+                if (data == "") {
+                    //Alert.success("Cập nhật thành công.", "Thông báo", { displayDuration: 2000 });
+
+                } else {
+                    Alert.error("Đã có lỗi xảy ra, Vui lòng kiểm tra lại.", "Thông báo", { displayDuration: 2000 });
+                }
+            },
+            error: function () {
+                Alert.error("Cập nhật không thành công", "Thông báo", { displayDuration: 2000 });
+            }
+        });
+    }
+    function ChangeDoUuTien(obj, maNguyenLieu) {
+        $.ajax({
+            url: "/NguyenLieu/UpdateDoUuTien",
+            type: 'POST',
+            data: { doUuTien: parseFloat($(obj).autoNumeric('get')), maNguyenLieu: maNguyenLieu },
+            success: function (data) {
+                if (data == "") {
+                    //listFilter(this);
+                } else {
+                    Alert.error("Đã có lỗi xảy ra, Vui lòng kiểm tra lại.", "Thông báo", { displayDuration: 2000 });
+                }
+            },
+            error: function () {
+                Alert.error("Cập nhật không thành công", "Thông báo", { displayDuration: 2000 });
+            }
+        });
+    }
+    function ChangeTonToiThieu(obj, maNguyenLieu) {
+        $.ajax({
+            url: "/NguyenLieu/UpdateTonKho",
+            type: 'POST',
+            data: { slTonToiThieu: parseFloat($(obj).autoNumeric('get')), maNguyenLieu: maNguyenLieu },
+            success: function (data) {
+                if (data == "") {
+                } else {
+                    Alert.error("Đã có lỗi xảy ra, Vui lòng kiểm tra lại.", "Thông báo", { displayDuration: 2000 });
+                }
+            },
+            error: function () {
+                Alert.error("Cập nhật không thành công", "Thông báo", { displayDuration: 2000 });
+            }
+        });
+    }
+    function ChangeTonToiDa(obj, maNguyenLieu) {
+        $.ajax({
+            url: "/NguyenLieu/UpdateTonKho",
+            type: 'POST',
+            data: { slTonToiDa: parseFloat($(obj).autoNumeric('get')), maNguyenLieu: maNguyenLieu },
+            success: function (data) {
+                if (data == "") {
+                } else {
+                    Alert.error("Đã có lỗi xảy ra, Vui lòng kiểm tra lại.", "Thông báo", { displayDuration: 2000 });
+                }
+            },
+            error: function () {
+                Alert.error("Cập nhật không thành công", "Thông báo", { displayDuration: 2000 });
+            }
+        });
+    }
+    function sendEmail() {
+        $(".pageLoading").show();
+        $.ajax({
+            url: "@Url.Action("SendMailSanPhamNL","NguyenLieu")",
+            type: 'POST',
+            data: { },
+            success: function (data) {
+                $(".pageLoading").hide();
+                    Alert.success("Send mail thành công.", "Thông báo", { displayDuration: 4000 });
+            
+            },
+            error: function () {
+                $(".pageLoading").hide();
+                Alert.error("Đã có lỗi xảy ra, Vui lòng kiểm tra lại.", "Thông báo", { displayDuration: 4000 });
+            }
+        });
+    }
+    function Export() {
+        var url = "@Url.Action("ExportExcelFile", "DanhMucSanPham")" + "?pageSize=" + $("#pref-perpage").val()
+                                                           + "&qSearch=" + $("#pref-search").val().replace(/\ /g, "+")
+                                                           + "&tuNgay=" + $("#fromDate").val()
+                                                           + "&denNgay=" + $("#toDate").val() + "&maLoaiThuoc=" + $("#maThuoc").val();
+     
+          location.href = url;
+      }
+</script>
+@using (Html.BeginForm("Delete", "DanhMucSanPham", FormMethod.Post, new { @class = "form-inline", @role = "form", @id = "form-submit" }))
+{
+    <fieldset class="removeBorderFieldset">
+        <div id="tabs" style="border: none;" class="ui-tabs ui-widget ui-widget-content ui-corner-all">
+            <ul class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">
+                <li class="ui-state-default ui-corner-top ui-tabs-selected ui-state-active"><a><span>Danh mục sản phẩm</span></a></li>
+            </ul>
+        </div>
+        <div id="filterPanel">
+            <table class="table table-condensed TableMobileChild">
+                <tr class="background_tr">
+                    <td style="position: relative; width: 100px">
+                        <input class="form-control datepicker" style="width: 100%" id="fromDate" placeholder="từ ngày" />
+                    </td>
+                    <td style="position: relative; width: 100px">
+                        <input class="form-control datepicker" style="width: 100%" id="toDate" placeholder="đến ngày" />
+                    </td>
+                    <td style="font-size: 12px;" class="font-link-time ">
+                        <a href="javascript:void(0);" onclick="toDay()">Today</a> | <a href="javascript:void(0);" onclick="toWeek()">Last 7 days</a> |
+                                    
+                                    <a href="javascript:void(0);" onclick="toMonth()">Last 30 days</a>
+                    </td>
+                        <td style="float:right">Tên loại thuốc:
+                        @Html.DropDownList("maThuoc", ViewBag.lstDanhMucThuocs as SelectList, new { @class = "form-control", @style = "width:350px !important;" })
+                    </td>
+                </tr>
+                <tr class="background_tr">
+                    <td colspan="3">
+                        <div style="display: inline-flex; width: 100%;">
+                            <input type="text" class="form-control input-sm" style="width: 100%" id="pref-search" onkeydown="enterToSeacrh(event)" value="" placeholder="Nhập giá trị tìm kiếm...">
+                            <div style="width: 71px;">
+                                <button id="btnSearch" type="button" class="btn btn-primary btn-sm" style="border: 1px double; margin-left: 5px">
+                                    <span class="glyphicon glyphicon-search"></span>Tìm kiếm
+                                </button>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                            @{
+    var quyenAdmin = ViewBag.QuyenAdmin;
+    if (quyenAdmin == 1)
+    {
+                        <div style="float: right">
+                             <button class="btn btn-info" id="btnImport" type="button" data-toggle="modal" data-target="#importModal">Import</button>
+                          <button type="button" class="btn btn-primary btn-sm" style="border: 1px double; margin-left: 5px" onclick="Export()">
+                                <span class="glyphicon glyphicon-download-alt" style="margin-right: 5px"></span>Export File
+                            </button>
+                            <button class="btn btn-info" id="btnThem" type="button" onclick="themMoi()">Thêm </button>
+                            <button class="btn btn-info" type="button" id="btnUpdate">Sửa </button>
+                            <button class="btn btn-info" id="btnDelete" type="button" onclick="deleteOnSubmit()">Xóa </button>
+                            
+                        </div>
+    }
+}
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div id="container">
+            @{Html.RenderPartial("ViewIndex");}
+
+        </div>
+    </fieldset>
+}
+<div id="importModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">Import Excel File</h4>
+            </div>
+            <div class="modal-body">
+                <div class="container" style="width: 100%">
+                    <div class="row">
+                        <div id="import-panel" class="filter-panel">
+                            <div id="dialog" class="alert alert-info" style="display: none">
+                                <strong>Thông báo!</strong> File đính kèm không đúng định dạng.  
+                            </div>
+                            <h4>Tải về danh mục thuốc </h4>
+                            <a class="download" style="color: #337ab7; text-decoration: none;" href="@Url.Action("Downloads", "DanhMucSanPham")">
+                                <i class="fa fa-download" aria-hidden="true"></i>
+                            </a>
+                            <h4>Chọn file dữ liệu (*.xlsx, *.xls)</h4>
+                            <div class="panel panel-default">
+                                <input type="file" id="fileImport" name="fileImport" value="Chọn file" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="border: none" />
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped active" role="progressbar"
+                                    aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+                                    0%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default btn-sm" data-dismiss="modal">Đóng</button>
+                <button type="button" id="btnSaveImport" class="btn btn-primary btn-sm">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+

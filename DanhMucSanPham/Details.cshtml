@@ -1,0 +1,351 @@
+﻿@using BatDongSan.Models.QuanLyThiTruong;
+@model tbl_QLTT_DanhMucSanPham
+@{
+    ViewBag.Title = "Details";
+    string chuoiTenLoai = string.Empty;
+}
+
+<script src="~/Scripts/jquery.unobtrusive-ajax.min.js"></script>
+<script src="~/Scripts/moment.min.js"></script>
+<script src="~/Scripts/vi.js"></script>
+<script src="~/Scripts/jquery.validate.min.js"></script>
+<script src="~/Scripts/additional-methods.min.js"></script>
+<script src="~/Scripts/bootstrap-datetimepicker.min.js"></script>
+<script src="~/Scripts/autoNumeric.js"></script>
+<script src="~/Scripts/batdongsan.validate.js"></script>
+<link rel="stylesheet" href="~/Content/bootstrap-datetimepicker.min.css" />
+<link rel="stylesheet" href="~/Content/summernote/summernote.css" />
+<script src="~/Content/summernote/summernote.js"></script>
+<script src="~/Scripts/batdongsan.uploadfile.js"></script>
+<script src="~/Scripts/ckeditor/ckeditor.js"></script>
+<script src="~/Scripts/ckfinder/ckfinder.js"></script>
+<script src="~/Scripts/select2.full.js"></script>
+<link href="~/Scripts/select2.min.css" rel="stylesheet">
+<script>
+    $(function () {
+        $(".inputnumber").autoNumeric('init', { lZero: 'deny', mDec:0, pSign: 's', aSep: ',', aDec: '.', vMin: '-9999999999' });
+        $(".inputnumbermoney").autoNumeric('init', { lZero: 'deny', mDec: 0, pSign: 's', aSep: ',', aDec: '.', vMin: '-9999999999' });
+
+        $("#btnAddMCC").click(function () {
+            var row = $("#noiDungCopy table tr").clone();
+            var rowCount = $("#tbl-nhomMCC >tbody>tr").length + 1;
+            row.find("input").val("");
+            row.find("td:eq(0)").html(rowCount);
+            row.find("td:last").find("button").addClass("btnXoaMCC");
+            $("#tableNguyenLieu >tbody").prepend(row);
+            SetIsNumeric();
+            $(".datepicker").datetimepicker({
+                locale: 'vi',
+                format: 'DD/MM/YYYY'
+            });
+            $(".clsTenNguyenLieu").html($("#TenNguyenLieu").val());
+        });
+        $("#maThuoc").select2({
+            placeholder: "Chọn loại thuốc"
+        });
+      @*  var editor = CKEDITOR.instances['ghiChu'];
+        if (editor) { editor.destroy(true); }
+        var newCKEdit = CKEDITOR.replace('ghiChu', {
+            toolbar: 'Custom', height: '350px'
+        });
+
+        CKFinder.setupCKEditor(newCKEdit, '@Url.Content("~/Scripts/ckfinder")');*@
+
+        CKEDITOR.on('instanceReady', function (ev) {
+            var blockTags = ['div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'pre', 'li', 'blockquote', 'ul', 'ol',
+            'table', 'thead', 'tbody', 'tfoot', 'td', 'th', 'tr'];
+
+            for (var i = 0; i < blockTags.length; i++) {
+                ev.editor.dataProcessor.writer.setRules(blockTags[i], {
+                    indent: false,
+                    breakBeforeOpen: false,
+                    breakAfterOpen: false,
+                    breakBeforeClose: false,
+                    breakAfterClose: false
+                });
+            }
+        });
+        $(".datepicker").datetimepicker({
+            locale: 'vi',
+            format: 'DD/MM/YYYY'
+        });
+        $(".btnSubmit").click(function () {
+            var form = document.getElementById('form-submit');
+            if (form.checkValidity()) {
+                var F = $("#form-submit");
+                F.action = '@Url.Action("Edit", "NhaCungCap")';
+                F.submit();
+            }
+        });
+        SetIsNumeric();
+        $('#filedaidien').change(function () {
+            var input = this;
+            var url = $(this).val();
+            var ext = url.substring(url.lastIndexOf('.') + 1).toLowerCase();
+            if (input.files && input.files[0] && (ext == "gif" || ext == "png" || ext == "jpeg" || ext == "jpg")) {
+                var reader = new FileReader();
+
+                reader.onload = function (e) {
+                    $('.hinhAnh').attr('src', e.target.result);
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        });
+        $("#loaiBaoCao").change(function () {
+            var GiaTriCu = $("#loaiBCPost").val();
+            var GiaTriMoi = "";
+            var GiaTriChon = "";
+
+            //text
+            var lblCu = $("#TenLoaiBCPost").val();
+            var lblMoi = "";
+            var lblChon = "";
+
+            if ($(this).val() != "") {
+                GiaTriChon += $(this).val() + ";";
+                lblChon += $("#loaiBaoCao option:selected").text();
+            }
+
+            GiaTriMoi = GiaTriCu + GiaTriChon;
+            lblMoi = lblCu + lblChon;
+
+            var list = GiaTriMoi.split(";");
+            var listlbl = lblMoi.split(";");
+
+            var ChuoiLuu = unique(list);
+            var ChuoiLuulbl = unique(listlbl);
+            $("#loaiBCPost").val(ChuoiLuu);
+            $("#TenLoaiBCPost").val(ChuoiLuulbl);
+
+            var stringBuiler = "";
+            var listResult = ChuoiLuu.split(";");
+            var listResultlbl = ChuoiLuulbl.split(";");
+            if (listResult.length > 0) {
+                for (var i = 0; i < listResultlbl.length; i++) {
+                    if (listResult[i] != "") {
+                        stringBuiler += "<div class='child-loai-bc'>";
+                        stringBuiler += "<span>" + listResultlbl[i] + "</span>";
+                        stringBuiler += '<div class="remove-child-loai-bc" onclick="DeleteLoai(this,\'' + listResult[i] + '\',\'' + listResultlbl[i] + '\')">x</div>';
+                        stringBuiler += "</div>";
+                    }
+                }
+            }
+
+            $(".box-loai-bc").html(stringBuiler);
+        });
+        $(".btnThemeAdd").click(function () {
+            $(".clsLoadTamUng").append($(".tblDeNghiCL table tbody").html());
+            $(".numberinput").autoNumeric('init', { mDec: 0, mNum: 3, lZero: 'deny', aSep: ',', aDec: '.', pSign: 's', vMin: '0' });
+            ResetSTT();
+        });
+
+    });
+    function ResetSTT() {
+        var table = document.getElementById("tbodyNV");
+        for (var i = 0; i < table.rows.length; i++) {
+            $('#tbodyNV' + ' tr:eq(' + i + ')').find("td:first").html(i + 1);
+        }
+    }
+    function DeleteRow(id_tbody, index, sTT) {
+        var table = document.getElementById(id_tbody);
+        var maNCC = $('#' + id_tbody + ' tr:eq(' + index + ')').find("a").html();
+        var tenNCC = $('#' + id_tbody + ' tr:eq(' + index + ')').find("td:eq(" + 2 + ")").html();
+
+        table.deleteRow(index);
+
+
+    }
+    function unique(list) {
+        var result = [];
+        var ChuoiCuoi = ";";
+        $.each(list, function (i, e) {
+            if ($.inArray(e, result) == -1 && e != "") {
+                result.push(e);
+                ChuoiCuoi += e + ";";
+            }
+        });
+        return ChuoiCuoi;
+    }
+    function DeleteLoai(obj, maLoai, tenLoai) {
+        $(obj).closest(".child-loai-bc").remove();
+        var lsMaLoai = $("#loaiBCPost").val();
+        var lsTenLoai = $("#TenLoaiBCPost").val();
+        lsMaLoai = lsMaLoai.replace((maLoai + ";"), "");
+        lsTenLoai = lsTenLoai.replace((tenLoai + ";"), "");
+
+        if (lsMaLoai == ";") {
+            lsMaLoai = "";
+        }
+        if (lsTenLoai == ";") {
+            lsTenLoai = "";
+        }
+        $("#loaiBCPost").val(lsMaLoai);
+        $("#TenLoaiBCPost").val(lsTenLoai);
+    }
+    function SetIsNumeric() {
+         $(".inputnumberDM").autoNumeric('init', { lZero: 'deny', mDec: 2, pSign: 's', aSep: ',', aDec: '.', vMin: '-9999999999' });
+        $(".inputnumbermoney").autoNumeric('init', { lZero: 'deny', mDec: 2, pSign: 's', aSep: ',', aDec: '.', vMin: '-9999999999' });
+    }
+</script>
+<style>
+    #filedaidien {
+        padding: 0;
+        margin: 0;
+        border: 1px solid rgba(60,114,171,.66);
+    }
+
+    .avatar-nl {
+        width: 150px;
+        height: 150px;
+        position: relative;
+    }
+
+        .avatar-nl #filedaidien {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+        }
+
+        .avatar-nl img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border: 1px solid #ddd;
+        }
+
+    .child-loai-bc {
+        position: relative;
+        float: left;
+        margin: 2px 5px;
+        padding: 2px 28px 2px 5px;
+        background: #337ab7;
+        text-align: center;
+        color: #fff;
+        border-radius: 5px;
+    }
+
+        .child-loai-bc:hover {
+            opacity: 0.9;
+        }
+
+    .remove-child-loai-bc {
+        position: absolute;
+        right: 0;
+        top: 0;
+        background: #db2b2b;
+        text-align: center;
+        width: 23px;
+        padding: 2px;
+        border-radius: 0 4px 4px 0;
+        cursor: pointer;
+    }
+</style>
+
+<form class="form-horizontal" method="post" role="form" id="form-submit" enctype="multipart/form-data">
+    <div id="container">
+        <fieldset>
+            <legend style="display: inline">Chi tiết sản phẩm</legend>
+            <div class="panel with-nav-tabs panel-primary">
+                   <table style="position: relative" class="table table-striped table-hover table-condensed TableMobileChild">
+                            <tr>
+                        <td class="tdtitle">Mã sản phẩm                  
+                        </td>
+                        <td>
+                            @Html.TextBoxFor(model => model.maSanPham, new { @class = "form-control", @required = "true" })
+                        </td>
+                        <td class="tdtitle">Ngày lập, Người lập
+                        </td>
+                        <td>
+                            @string.Format("{0:dd/MM/yyyy}", Model.ngayLap) - @Model.nguoiLap
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="tdtitle">Tên sản phẩm
+                        </td>
+                        <td>
+                            @Html.TextBoxFor(model => model.tenSanPham, new { @class = "form-control", @required = "required" })
+                        </td>
+                        <td class="tdtitle">Đơn giá
+                        </td>
+                        <td>
+                            @Html.TextBoxFor(model => model.donGia, new { @class = "form-control inputnumber" })
+                        </td>
+                           </tr>
+                    <tr>
+                        <td class="tdtitle">Số lượng/thùng
+                        </td>
+                        <td>
+                            @Html.TextBoxFor(model => model.soThung, new { @class = "form-control inputnumber" })
+                        </td>
+                          <td class="tdtitle">Điểm/thùng
+                        </td>
+                        <td>
+                            @Html.TextBoxFor(model => model.diemTrenThung, new { @class = "form-control inputnumber" })
+                        </td>
+                         
+                    </tr>
+                       <tr> <td class="tdtitle">Tên loại thuốc
+                        </td>
+                        <td>
+                            @Html.DropDownList("maThuoc", ViewData["danhSachThuoc"] as SelectList, new { })
+                        </td>
+                        <td class="tdtitle">Mã nhóm
+                        </td>
+                        <td>
+                            @Html.TextBoxFor(model => model.maNhomLeft, new { @class = "form-control" })
+                        </td>
+                       
+                    </tr>
+                </table>
+           @*      <div style="text-align:right">
+                <button  class="btn btn-info btnThemeAdd" type="button"><i class="fa fa-plus"></i> Thêm</button>
+            </div>
+            <div id="containerNhanVien">
+                <table class="table table-striped table-hover table-condensed TableMobile indexTblDeNghiChiLuong " id="tbl-users">
+                    <thead>
+                        <tr id="trtop">
+                            <th>STT</th>
+                            <th>Tên đối tượng</th>
+                             <th>Đặc trị</th>
+                            <th>Liều lượng</th>
+                            <th>Cách dùng</th>
+                            <th style="width: 40px"></th>
+                        </tr>
+                    </thead>
+                   <tbody id="tbodyNV" class="clsLoadTamUng">
+                        @{
+                            int k = 1;
+                            var lstChiTiet = ViewBag.lstChiTiet as List<tbl_QLTT_DanhMucSanPham_ChiTiet>;
+                               foreach (var item in lstChiTiet)
+                            {
+                            <tr>
+                                <td>@(k++)</td>
+                                <td>
+                                    <input type="text" name="tenDoiTuong" class="form-control "  required = "required" value="@item.tenDoiTuong" />
+                                </td>
+                                <td>
+                                    <input type="text" name="dacTri" class="form-control " value="@item.dacTri" />
+                                </td>
+                                <td>
+                                    <input type="text" name="lieuLuong" class="form-control " value="@item.lieuLuong" />
+                                </td>
+                                <td>
+                                    <input type="text" name="cachDung" class="form-control " value="@item.cachDung" />
+                                </td>
+                               
+                                <td><a href="javascript:void(0);" class="btnXoa">Xóa</a></td>
+                            </tr>
+                            }}
+                    </tbody>
+                </table>
+            </div>*@
+                <div style="padding: 5px; float: right">
+                   
+                    <button class="btn btn-info btnTroVe" type="button">Trở về </button>
+                </div>
+            </div>
+        </fieldset>
+    </div>
+</form>
+
