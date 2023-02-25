@@ -1,0 +1,155 @@
+﻿-------------------------------
+
+ViewBag
+Kiểu dữ liệu là dynamic
+ViewBag.name
+Controler -> View
+
+ViewData
+Kieu du lieu distonnary
+ViewData["name"]= "value"
+Controler -> View
+Khoa cua ViewBag voi ViewData ko duoc trung nhau
+
+TempData["name"] = "value";
+Kieu du lieu distonnary
+Controler <-> View
+Controller <-> Action
+Chi su dung mot lan
+De su dung lai cho lần tiếp theo:
+TempData.Keep("name")
+
+-------------------------------------
+Bundle va minify js, css
+
+--- Nen file js
+Trong BundleConfig.cs
+
+public static void RegisterBundles(BundleCollection bundles)
+        {
+            bundles.Add(new ScriptBundle("~/bundles/jquery").Include(                                              
+                       "~/Content/res-menu/js/responsivemultimenu.js"));
+
+            bundles.Add(new ScriptBundle("~/bundles/jqueryui").Include(
+                        "~/Scripts/jquery-ui-{version}.js",
+                        "~/Scripts/bootbox.min.js"));
+						}
+--- Nen file css
+						 bundles.Add(new StyleBundle("~/Content/css").Include(
+                                                "~/Content/font/css/font-awesome.css",
+                                                "~/Content/bootstrap/css/bootstrap.css",
+                                                "~/Content/bootstrap/css/bootstrap-theme.min.css"
+                                  new CssRewriteUrlTransform()              
+                                                //"~/Content/res-menu/css/responsivemultimenu.css"
+                ));
+-- Enable optimize
+BundleTable.EnableOptimizations = true;
+
+---- View su dung
+
+@Scripts.Render("~/bundles/jquery")
+
+@Styles.Render("~/Content/css")
+
+
+
+-------------------------------------------------------------
+Validate in asp
+
+Su dung namespae DataAnnotations
+public class Student
+{
+    public int StudentId { get; set; }
+     
+    [Required]
+    public string StudentName { get; set; }
+       
+    [Range(10, 20)]
+    public int Age { get; set; }
+}
+
+public class Student
+{
+    public int StudentId { get; set; }
+    [Required(ErrorMessage="Please enter student name.")]
+    public string StudentName { get; set; }
+    public int Age { get; set; }
+}
+
+
+public class StudentController : Controller
+{
+    public ActionResult Edit(int id)
+    {
+        var stud = ... get the data from the DB using Entity Framework
+
+        return View(stud);
+    }
+
+    [HttpPost]
+    public ActionResult Edit(Student std)
+    {
+        //checking model state
+        if (!ModelState.IsValid) 
+        {
+            return View(std);
+        }
+            
+        //update student to db
+            
+        return RedirectToAction("Index");
+    }
+}
+
+
+@model MVC_BasicTutorials.Models.Student
+
+@{
+    ViewBag.Title = "Edit";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Edit</h2>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    
+    <div class="form-horizontal">
+        <h4>Student</h4>
+        <hr />
+		---- Hieen thi cung luc tat ca
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        @Html.HiddenFor(model => model.StudentId)
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.StudentName, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.StudentName, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.StudentName, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Age, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.Age, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Age, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" value="Save" class="btn btn-default" />
+            </div>
+        </div>
+    </div>
+}
+
+<div>
+    @Html.ActionLink("Back to List", "Index")
+</div>
+
+
+-----
+https://comdy.vn/asp-net-mvc/filter-trong-asp-net-mvc/
