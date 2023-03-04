@@ -5,4 +5,6 @@ Switch nhanh:
     git checkout bin
     git branch bin
    
-   
+ Move source tu nhanh a sang nhanh b
+  git push --set-upstream master bin
+  
