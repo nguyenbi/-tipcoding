@@ -1,0 +1,8 @@
+Tao nhanh:
+    git branch bin
+    git branch: liet ke
+Switch nhanh:
+    git checkout bin
+    git branch bin
+   
+   
