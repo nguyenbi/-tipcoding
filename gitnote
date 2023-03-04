@@ -6,5 +6,6 @@ Switch nhanh:
     git branch bin
    
  Move source tu nhanh a sang nhanh b
-  git push --set-upstream master bin
+ git branch bin
+  git push --set-upstream origin bin
   
