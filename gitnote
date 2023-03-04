@@ -4,7 +4,9 @@ Tao nhanh:
 Switch nhanh:
     git checkout bin
     git branch bin
-   
+ 
+ Lay source lan dau:
+  git remote add origin https://github.com/nguyenbi/gitbranch3.git
  Move source tu nhanh a sang nhanh b
  git branch bin
   git push --set-upstream origin bin
